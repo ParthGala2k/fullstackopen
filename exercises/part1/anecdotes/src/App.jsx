@@ -1,5 +1,25 @@
 import { useState } from 'react'
 
+const Header = ({ headerName }) => <h2>{headerName}</h2>
+
+const Anecdote = ({ text, numVotes }) => <p>{text}<br />::has {numVotes} votes</p>
+
+const Button = ({ onClick, text }) => <button onClick={onClick}>{text}</button>
+
+const MaxVotes = ({ anecdotes, votes }) => {
+  const highestVotes = Math.max(...votes)
+  const winner = anecdotes[votes.findIndex((vote) => vote === highestVotes)]
+
+  if (highestVotes === 0) {
+    return (
+      <p>No votes yet</p>
+    )
+  }
+  return (
+    <p>{winner}<br />::has {highestVotes} votes</p>
+  )
+}
+
 const App = () => {
   const anecdotes = [
     'If it hurts, do it more often.',
@@ -27,13 +47,16 @@ const App = () => {
 
   return (
     <div>
-      <h1>Anecdote of the day</h1>
-      <p>{anecdotes[selected]}<br />::has {votes[selected]} votes</p>
-      <button onClick={handleVotes}>Vote</button>
-      <button onClick={() => {setSelected(randomInt(anecdotes.length))}}>Next Anecdote</button>
-      <h1>Anecdote with most votes</h1>
-      <p>{anecdotes[votes.reduce((acc, current, currentIndex) => (current > acc.largest ? { largest: current, largestIndex: currentIndex } : acc),
-        {largest: votes[0], largestIndex: 0}).largestIndex]}<br />::has {Math.max(...votes)} votes</p>
+      <Header headerName="Anecdote of the day" />
+      <Anecdote text={anecdotes[selected]} numVotes={votes[selected]} />
+      <Button onClick={handleVotes} text="Vote" />
+      <Button onClick={() => {setSelected(randomInt(anecdotes.length))}} text="Next Anecdote" />
+      <Header headerName="Anecdote with most votes" />
+      <MaxVotes anecdotes={anecdotes} votes={votes} />
+
+      {/* An implementation using reduce method to determine max votes */}
+      {/* <p>{anecdotes[votes.reduce((acc, current, currentIndex) => (current > acc.largest ? { largest: current, largestIndex: currentIndex } : acc),
+        {largest: votes[0], largestIndex: 0}).largestIndex]}<br />::has {Math.max(...votes)} votes</p> */}
     </div>
   )
 }
