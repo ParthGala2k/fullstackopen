@@ -1,5 +1,4 @@
 import ReactDOM from 'react-dom/client'
-// import App from './App'
-import Application from '../trialfile'
+import App from './App'
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Application />)
+ReactDOM.createRoot(document.getElementById('root')).render(<App />)
