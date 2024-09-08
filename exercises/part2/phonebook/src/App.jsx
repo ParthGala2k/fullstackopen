@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import contactService from './services/contacts'
 
 
 const PersonForm = ({ addContact, handleNameAdd, handleNumberAdd }) => {
@@ -45,11 +45,9 @@ const App = () => {
   const [searchName, setSearchName] = useState('')
 
   useEffect(() => {
-    axios
-    .get('http://localhost:3001/persons')
-    .then(response => {
-      setPersons(response.data)
-    })
+    contactService
+      .getAllContacts()
+      .then(output => setPersons(output))
   }, [])
 
   const addContact = (event) => {
@@ -57,8 +55,10 @@ const App = () => {
     const newContact = {'name': newName, 'number': newNumber}
 
     // One solution to finding matches for same name in an array of name objects
-    if (persons.find(value => value.name === newContact.name) === undefined) {
-      setPersons(persons.concat(newContact))
+    if (persons.find(value => value.name.toLowerCase() === newContact.name.toLowerCase()) === undefined) {
+      contactService
+        .addContact(newContact)
+        .then(output => setPersons(persons.concat(output)))
     }
     else {
       alert(`${newContact.name} is already added to phonebook`)
@@ -69,7 +69,6 @@ const App = () => {
     // if (persons.find(value => _.isEqual(value, newContact)) === undefined) {
     //   setPersons(persons.concat(newContact))
     // }
-
   }
 
   const handleNameSearch = event => setSearchName(event.target.value)
