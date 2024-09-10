@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import contactService from './services/contacts'
 
 
-const PersonForm = ({ addContact, handleNameAdd, handleNumberAdd }) => {
+const PersonForm = ({ name, number, addContact, handleNameAdd, handleNumberAdd }) => {
   return (
     <form onSubmit={addContact}>
       <div id='name'>
-        name: <input onChange={handleNameAdd}/>
+        name: <input value={name} onChange={handleNameAdd}/>
       </div>
       <div id='number'>
-        number: <input onChange={handleNumberAdd}/>
+        number: <input value={number} onChange={handleNumberAdd}/>
       </div>
       <div>
         <button type='submit'>add</button>
@@ -26,12 +26,21 @@ const Filter = ({ handleNameSearch }) =>  {
   )
 }
 
-const PersonsList = ({ allPersons, searchName }) => {
+const PersonEntry = ({ handlePersonDelete, person }) => {
+  return (
+    <div>
+      {person.name} {person.number}
+      <button onClick={() => handlePersonDelete(person.id)}>Delete</button>
+    </div>
+  )
+}
+
+const PersonsList = ({ allPersons, searchName, handlePersonDelete }) => {
   return (
     <div>
       {allPersons
       .filter(person => person.name.toLowerCase().includes(searchName.toLowerCase()))
-      .map(person => <div key={person.name}>{person.name} {person.number}</div>)}
+      .map(person => <PersonEntry key={person.id} handlePersonDelete={handlePersonDelete} person={person} />)}
     </div>
   )
 }
@@ -55,14 +64,28 @@ const App = () => {
     const newContact = {'name': newName, 'number': newNumber}
 
     // One solution to finding matches for same name in an array of name objects
-    if (persons.find(value => value.name.toLowerCase() === newContact.name.toLowerCase()) === undefined) {
+    const contactExists = persons.find(value => value.name.toLowerCase() === newContact.name.toLowerCase())
+    if (!contactExists) {
       contactService
         .addContact(newContact)
-        .then(output => setPersons(persons.concat(output)))
+        .then(output => {
+          setPersons(persons.concat(output))
+        })
     }
     else {
-      alert(`${newContact.name} is already added to phonebook`)
+      const contactId = contactExists.id
+      if (window.confirm(`${newContact.name} is already added to phonebook. Replace with new number ?`)) {
+        contactService
+          .updateContact(contactId, newContact)
+          .then(output => setPersons(
+            persons
+              .filter(person => person.id !== contactId)
+              .concat(output)
+            ))
+      }
     }
+    setNewName('')
+    setNewNumber('')
 
     // This is the other method using the lodash operator but you'd have to import
     // the lodash library for it
@@ -76,14 +99,27 @@ const App = () => {
   const handleNameAdd = event => setNewName(event.target.value)
   const handleNumberAdd = event => setNewNumber(event.target.value)
 
+  const handlePersonDelete = (id) => {
+    const contactToDelete = persons.find(person => person.id === id)
+    if (window.confirm(`Delete ${contactToDelete.name} ?`)) {
+      contactService
+        .deleteContact(id)
+        .then(response => {
+          if (response.status === 200) {
+            setPersons(persons.filter(person => person.id !== id))
+          }
+        })
+    }
+  }
+
   return (
     <div>
       <h2>Phonebook</h2>
       <Filter handleNameSearch={handleNameSearch}/>
       <h3>Add New</h3>
-      <PersonForm addContact={addContact} handleNameAdd={handleNameAdd} handleNumberAdd={handleNumberAdd} />
+      <PersonForm name={newName} number={newNumber} addContact={addContact} handleNameAdd={handleNameAdd} handleNumberAdd={handleNumberAdd} />
       <h3>Numbers</h3>
-      <PersonsList allPersons={persons} searchName={searchName} />
+      <PersonsList allPersons={persons} searchName={searchName} handlePersonDelete={handlePersonDelete} />
     </div>
   )
 }
