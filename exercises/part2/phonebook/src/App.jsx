@@ -18,6 +18,32 @@ const PersonForm = ({ name, number, addContact, handleNameAdd, handleNumberAdd }
   )
 }
 
+const Notification = ({ message, errorMessageSet }) => {
+  const notificationColor = errorMessageSet ? 'red' : 'green'
+
+  const notificationStyle = {
+    color: notificationColor,
+    fontStyle: 'italic',
+    fontSize: 26,
+    background: 'lightgrey',
+    borderWidth: 3,
+    borderStyle: 'solid',
+    borderColor: notificationColor,
+    padding: 5,
+    marginBottom: 18
+  }
+
+  if (!message) {
+    return null
+  }
+
+  return (
+    <div style={notificationStyle}>
+      {message}
+    </div>
+  )
+}
+
 const Filter = ({ handleNameSearch }) =>  {
   return (
     <div id='search'>
@@ -53,10 +79,14 @@ const App = () => {
 
   const [searchName, setSearchName] = useState('')
 
+  const [notificationMessage, setNotificationMessage] = useState('')
+
+  const [errorMessage, setErrorMessage] = useState(false)
+
   useEffect(() => {
     contactService
-      .getAllContacts()
-      .then(output => setPersons(output))
+    .getAllContacts()
+    .then(output => setPersons(output))
   }, [])
 
   const addContact = (event) => {
@@ -67,21 +97,31 @@ const App = () => {
     const contactExists = persons.find(value => value.name.toLowerCase() === newContact.name.toLowerCase())
     if (!contactExists) {
       contactService
-        .addContact(newContact)
-        .then(output => {
-          setPersons(persons.concat(output))
-        })
+      .addContact(newContact)
+      .then(output => {
+        setPersons(persons.concat(output))
+        setNotificationMessage(`${output.name} added successfully`)
+        setTimeout(() => {
+          setNotificationMessage('')
+        }, 5000)
+      })
     }
     else {
       const contactId = contactExists.id
       if (window.confirm(`${newContact.name} is already added to phonebook. Replace with new number ?`)) {
         contactService
-          .updateContact(contactId, newContact)
-          .then(output => setPersons(
+        .updateContact(contactId, newContact)
+        .then(output => {
+          setPersons(
             persons
-              .filter(person => person.id !== contactId)
-              .concat(output)
-            ))
+            .filter(person => person.id !== contactId)
+            .concat(output)
+          )
+          setNotificationMessage(`${output.name} updated successfully`)
+          setTimeout(() => {
+            setNotificationMessage('')
+          }, 5000)
+        })
       }
     }
     setNewName('')
@@ -103,19 +143,37 @@ const App = () => {
     const contactToDelete = persons.find(person => person.id === id)
     if (window.confirm(`Delete ${contactToDelete.name} ?`)) {
       contactService
-        .deleteContact(id)
-        .then(response => {
-          if (response.status === 200) {
-            setPersons(persons.filter(person => person.id !== id))
-          }
-        })
+      .deleteContact(id)
+      .then(response => {
+        if (response.status === 200) {
+          setPersons(persons.filter(person => person.id !== id))
+
+          setNotificationMessage(`${contactToDelete.name} deleted successfully`)
+          setTimeout(() => {
+            setNotificationMessage('')
+          }, 5000)
+        }
+      })
+      .catch(error => {
+        if (error.response.status === 404) {
+          setPersons(persons.filter(person => person.id !== id))
+
+          setNotificationMessage(`${contactToDelete.name} has already been deleted!`)
+          setErrorMessage(true)
+          setTimeout(() => {
+            setNotificationMessage('')
+            setErrorMessage(false)
+          }, 5000)
+        }
+      })
     }
   }
 
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter handleNameSearch={handleNameSearch}/>
+      <Notification message={notificationMessage} errorMessageSet={errorMessage} />
+      <Filter handleNameSearch={handleNameSearch} />
       <h3>Add New</h3>
       <PersonForm name={newName} number={newNumber} addContact={addContact} handleNameAdd={handleNameAdd} handleNumberAdd={handleNumberAdd} />
       <h3>Numbers</h3>
