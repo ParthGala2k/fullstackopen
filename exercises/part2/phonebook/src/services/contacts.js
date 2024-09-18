@@ -15,11 +15,8 @@ const addContact = (contact) => {
 }
 
 const deleteContact = (id) => {
-  // const contactName = axios.get(`${baseUrl}/${id}`).then(response => console.log(response.data.name))
-  // if (window.confirm(`Delete ${contactName} ?`)) {
   return axios
           .delete(`${baseUrl}/${id}`)
-  // }
 }
 
 const updateContact = (id, contact) => {
