@@ -5,16 +5,42 @@ const ShowCountry = ({ country }) => {
 
   const languages = Object.values(country.languages)
 
+  const [weather, setWeather] = useState(null)
+  const [weatherIconUrl, setWeatherIcon] = useState('')
+
+  useEffect(() => {
+    const [lat, lng] = country.capitalInfo.latlng
+    const api_key = import.meta.env.VITE_WEATHER_SERVICE_KEY
+    axios
+    .get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${api_key}&units=metric`)
+    .then(response => {
+      setWeather(response.data)
+      setWeatherIcon(`https://openweathermap.org/img/wn/${response.data.weather[0].icon}@2x.png`)
+    })
+  }, [])
+
+
   return (
     <div>
       <h1>{country.name.common}</h1>
       <p>Capital: {country.capital}</p>
-      <p>Area: {country.area}</p>
+      <p>Area: {country.area} sq km</p>
       <h3>Languages</h3>
       <ul>
         {languages.map((language, i) => <li key={i}>{language}</li>)}
       </ul>
       <img src={country.flags.svg} width='150' height='150' />
+      <h3>Weather in {country.capital}</h3>
+      {weather ? (
+        <div>
+          <p>Temperature: {weather.main.temp}°C</p>
+          <img src={weatherIconUrl} />
+          <p>Wind: {weather.wind.speed} m/s</p>
+        </div>
+      ) : (
+        <p>Loading weather data...</p>
+      )
+      }
     </div>
   )
 }
