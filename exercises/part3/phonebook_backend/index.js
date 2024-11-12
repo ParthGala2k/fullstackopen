@@ -2,6 +2,15 @@ const express = require('express')
 const app = express()
 app.use(express.json())
 
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:', request.path)
+  console.log('Body:', request.body)
+  console.log('---')
+  next()
+}
+app.use(requestLogger)
+
 let contacts = [
   { 
     "id": "1",
@@ -71,6 +80,12 @@ app.delete('/api/persons/:id', (request, response) => {
   contacts = contacts.filter(contact => contact.id !== id)
   return response.status(204).end()
 })
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).json({ error: 'Unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
 
 const PORT = '3001'
 app.listen(PORT, () => {
