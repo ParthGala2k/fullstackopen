@@ -29,6 +29,49 @@ app.get('/api/persons', (request, response) => {
   return response.json(contacts)
 })
 
+app.get('/api/info', (request, response) => {
+  return response.send(`<p>Phonebook has info for ${contacts.length} people<br/>${new Date().toString()}</p>`)
+})
+
+app.get('/api/persons/:id', (request, response) => {
+  const contact = contacts.find(contact => contact.id === request.params.id)
+  if (!contact) {
+    return response.status(404).end()
+  }
+  return response.json(contact)
+})
+
+app.post('/api/persons', (request, response) => {
+  const contactBody = request.body
+  
+  if (!contactBody.name || !contactBody.number) {
+    return response.status(404).json({
+      error: 'Content Missing'
+    })
+  }
+
+  if (contacts.find(contact => contact.name === contactBody.name)) {
+    return response.status(409).json({
+      error: 'Name already exists'
+    })
+  }
+
+  const newContact = {
+    id: String(Math.round(Math.random() * 1000000)),
+    name: contactBody.name,
+    number: contactBody.number
+  }
+
+  contacts = contacts.concat(newContact)
+  return response.json(newContact)
+})
+
+app.delete('/api/persons/:id', (request, response) => {
+  const id = request.params.id
+  contacts = contacts.filter(contact => contact.id !== id)
+  return response.status(204).end()
+})
+
 const PORT = '3001'
 app.listen(PORT, () => {
   console.log(`Server started on Port ${PORT}`)
