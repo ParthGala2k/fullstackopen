@@ -1,8 +1,11 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 
 const app = express()
 app.use(express.json())
+app.use(cors())
+app.use(express.static('dist'))
 
 const requestLogger = (request, response, next) => {
   console.log('Method:', request.method)
@@ -86,7 +89,10 @@ app.post('/api/persons', (request, response) => {
 
 app.delete('/api/persons/:id', (request, response) => {
   const id = request.params.id
+  // console.log(request)
+  console.log(id)
   contacts = contacts.filter(contact => contact.id !== id)
+  console.log(contacts)
   return response.status(204).end()
 })
 
@@ -96,7 +102,7 @@ const unknownEndpoint = (request, response) => {
 
 app.use(unknownEndpoint)
 
-const PORT = '3001'
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server started on Port ${PORT}`)
 })
