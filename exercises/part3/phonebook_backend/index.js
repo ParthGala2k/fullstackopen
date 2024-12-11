@@ -1,6 +1,7 @@
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/contact')
 
 const app = express()
 app.use(express.json())
@@ -23,77 +24,103 @@ morgan.token('contents', (request) => {
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :contents'))
 
-let contacts = [
-  { 
-    "id": "1",
-    "name": "Arto Hellas", 
-    "number": "040-123456"
-  },
-  { 
-    "id": "2",
-    "name": "Ada Lovelace", 
-    "number": "39-44-5323523"
-  },
-  { 
-    "id": "3",
-    "name": "Dan Abramov", 
-    "number": "12-43-234345"
-  },
-  { 
-    "id": "4",
-    "name": "Mary Poppendieck", 
-    "number": "39-23-6423122"
-  }
-]
-
-app.get('/api/persons', (request, response) => {
-  return response.json(contacts)
+app.get('/api/info', (request, response, next) => {
+  return response.send('<h3>This is the phonebook application to store contacts</h3>')
 })
 
-app.get('/api/info', (request, response) => {
-  return response.send(`<p>Phonebook has info for ${contacts.length} people<br/>${new Date().toString()}</p>`)
-})
-
-app.get('/api/persons/:id', (request, response) => {
-  const contact = contacts.find(contact => contact.id === request.params.id)
-  if (!contact) {
-    return response.status(404).end()
-  }
-  return response.json(contact)
-})
-
-app.post('/api/persons', (request, response) => {
-  const contactBody = request.body
-  
-  if (!contactBody.name || !contactBody.number) {
-    return response.status(404).json({
-      error: 'Content Missing'
+app.get('/api/persons', (request, response, next) => {
+  Person.find({})
+    .then(result => {
+      console.log('Successfully fetched all contacts')
+      console.log(result)
+      return response.status(200).json(result)
     })
-  }
-
-  if (contacts.find(contact => contact.name === contactBody.name)) {
-    return response.status(409).json({
-      error: 'Name already exists'
-    })
-  }
-
-  const newContact = {
-    id: String(Math.round(Math.random() * 1000000)),
-    name: contactBody.name,
-    number: contactBody.number
-  }
-
-  contacts = contacts.concat(newContact)
-  return response.json(newContact)
+    // .catch(error => next(error)) ---> is equivalent to below
+    .catch(next)
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
-  // console.log(request)
-  console.log(id)
-  contacts = contacts.filter(contact => contact.id !== id)
-  console.log(contacts)
-  return response.status(204).end()
+  Person.findById(id)
+    .then(result => {
+      console.log(result)
+      return response.status(200).json(result)
+    })
+    .catch(next)
+})
+
+app.post('/api/persons', (request, response, next) => {
+  const contactBody = request.body
+  if (!contactBody.name || !contactBody.number) {
+    const error = new Error('Content Missing')
+    error.name = 'ValidationError'
+    return next(error)
+  }
+
+  // This could be done much better using async-await and
+  // try-catch rather than the below method
+  Person.findOne({ name: contactBody.name })
+    .then(existingContact => {
+      // Also, kept both options to add as well as update in this route
+      // despite handling it in the frontend so as to ensure that the
+      // backend also works as expected
+      if (existingContact) {
+        Person.findOneAndUpdate(
+          { name: contactBody.name },
+          { number: contactBody.number },
+          { new: true }
+        )
+        .then(updatedContact => {
+          console.log('Updated the contact')
+          console.log(updatedContact)
+          return response.status(200).json(updatedContact)
+        })
+        .catch(next)
+      }
+      else {
+        Person.create(contactBody)
+          .then(newContact => {
+            console.log('Created new contact')
+            console.log(newContact)
+            return response.status(200).json(newContact)
+          })
+          .catch(next)
+      }
+    })
+    .catch(next)
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+  const contactBody = request.body
+  const id = request.params.id
+  if (!contactBody.number) {
+    const error = new Error('Content Missing')
+    error.name = 'ValidationError'
+    return next(error)
+  }
+
+  Person.findByIdAndUpdate(id, contactBody, { new: true })
+    .then(updatedContact => {
+      console.log('Updated the contact')
+      console.log(updatedContact)
+      return response.status(200).json(updatedContact)
+    })
+    .catch(next)
+})
+
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdAndDelete(request.params.id)
+    .then(result => {
+      if (result) {
+        console.log('Successfully deleted contact')
+      }
+      else {
+        console.log('Contact does not exist')
+      }
+      console.log(result)
+      return response.status(204).end()
+    })
+    .catch(next)
 })
 
 const unknownEndpoint = (request, response) => {
@@ -101,6 +128,25 @@ const unknownEndpoint = (request, response) => {
 }
 
 app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.log('Error name', error.name)
+  console.log('Error message', error.message)
+
+  if (error.name === 'ValidationError') {
+    console.log('Error message:', error.message)
+    return response.status(400).json({ error: error.message })
+  }
+
+  if (error.name === 'CastError') {
+    console.error('Error message:', error.message)
+    return response.status(400).json({ error: 'Malformatted id' })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
