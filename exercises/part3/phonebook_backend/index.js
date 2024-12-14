@@ -24,7 +24,7 @@ morgan.token('contents', (request) => {
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :contents'))
 
-app.get('/api/info', (request, response, next) => {
+app.get('/api/info', (request, response) => {
   return response.send('<h3>This is the phonebook application to store contacts</h3>')
 })
 
@@ -65,12 +65,12 @@ app.post('/api/persons', (request, response, next) => {
           { number: contactBody.number },
           { new: true }
         )
-        .then(updatedContact => {
-          console.log('Updated the contact')
-          console.log(updatedContact)
-          return response.status(200).json(updatedContact)
-        })
-        .catch(next)
+          .then(updatedContact => {
+            console.log('Updated the contact')
+            console.log(updatedContact)
+            return response.status(200).json(updatedContact)
+          })
+          .catch(next)
       }
       else {
         Person.create(contactBody)
