@@ -105,6 +105,15 @@ const App = () => {
           setNotificationMessage('')
         }, 5000)
       })
+      .catch(error => {
+        console.log(error.response.data)
+        setErrorMessage(true)
+        setNotificationMessage(error.response.data.error)
+        setTimeout(() => {
+          setErrorMessage(false)
+          setNotificationMessage('')
+        }, 5000)
+      })
     }
     else {
       const contactId = contactExists.id
@@ -119,6 +128,15 @@ const App = () => {
           )
           setNotificationMessage(`${output.name} updated successfully`)
           setTimeout(() => {
+            setNotificationMessage('')
+          }, 5000)
+        })
+        .catch(error => {
+          console.log(error.response.data)
+          setErrorMessage(true)
+          setNotificationMessage(error.response.data.error)
+          setTimeout(() => {
+            setErrorMessage(false)
             setNotificationMessage('')
           }, 5000)
         })
