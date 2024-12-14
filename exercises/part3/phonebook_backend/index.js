@@ -51,11 +51,6 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 app.post('/api/persons', (request, response, next) => {
   const contactBody = request.body
-  if (!contactBody.name || !contactBody.number) {
-    const error = new Error('Content Missing')
-    error.name = 'ValidationError'
-    return next(error)
-  }
 
   // This could be done much better using async-await and
   // try-catch rather than the below method
@@ -93,13 +88,8 @@ app.post('/api/persons', (request, response, next) => {
 app.put('/api/persons/:id', (request, response, next) => {
   const contactBody = request.body
   const id = request.params.id
-  if (!contactBody.number) {
-    const error = new Error('Content Missing')
-    error.name = 'ValidationError'
-    return next(error)
-  }
 
-  Person.findByIdAndUpdate(id, contactBody, { new: true })
+  Person.findByIdAndUpdate(id, contactBody, { new: true, runValidators: true, context: 'query' })
     .then(updatedContact => {
       console.log('Updated the contact')
       console.log(updatedContact)
