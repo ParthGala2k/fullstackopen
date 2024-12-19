@@ -1,19 +1,21 @@
+const logger = require('./logger')
+
 const requestLogger = (request, response, next) => {
-  console.log('Method: ', request.method)
-  console.log('Path: ', request.path)
-  console.log('Body: ', request.body)
-  console.log('-----')
+  logger.info('Method: ', request.method)
+  logger.info('Path: ', request.path)
+  logger.info('Body: ', request.body)
+  logger.info('-----')
 
   next()
 }
 
 const unknownRoute = (request, response) => {
-  console.log('Unknown route')
+  logger.info('Unknown route')
   return response.status(400).send({ error: 'Unknown route' })
 }
 
 const errorHandler = (error, request, response, next) => {
-  console.log(error.message)
+  logger.error(error.message)
 
   if (error.message === 'ValidationError') {
     return response.status(400).json({ error: error.message })
